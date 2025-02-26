@@ -1,0 +1,14 @@
+/Users/nicholasonigkeit/code/c#/TodoList/bin/Debug/net9.0/TodoList
+/Users/nicholasonigkeit/code/c#/TodoList/bin/Debug/net9.0/TodoList.deps.json
+/Users/nicholasonigkeit/code/c#/TodoList/bin/Debug/net9.0/TodoList.runtimeconfig.json
+/Users/nicholasonigkeit/code/c#/TodoList/bin/Debug/net9.0/TodoList.dll
+/Users/nicholasonigkeit/code/c#/TodoList/bin/Debug/net9.0/TodoList.pdb
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.GeneratedMSBuildEditorConfig.editorconfig
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.AssemblyInfoInputs.cache
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.AssemblyInfo.cs
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.csproj.CoreCompileInputs.cache
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.dll
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/refint/TodoList.dll
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.pdb
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.genruntimeconfig.cache
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/ref/TodoList.dll
