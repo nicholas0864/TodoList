@@ -2,162 +2,201 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.Text;
 
 namespace TodoList
 {
     class Program
     {
-        // Path to store JSON in project directory
-        private static readonly string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "todoList.json");
-        private static readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        private static readonly JsonSerializerOptions jsonOptions = new() { WriteIndented = true };
 
-        public static void Main(string[] args)
+        public static async Task Main()
         {
-            // Load the todo list from file
-            Lst todoList = LoadListFromFile();
-
-            bool running = true;
-            while (running)
+            Dictionary<string, Lst> todoLists = new()
             {
-                Console.Clear();  // Clears the screen for a cleaner look
-                Console.WriteLine("===== TODO LIST =====");
-                Console.WriteLine(todoList.ToString());
-                Console.WriteLine("\n1. Add Task\n2. Remove Task\n3. Exit");
-                Console.Write("Choose an option: ");
+                { "Work", new Lst("workList.json") },
+                { "Personal", new Lst("personalList.json") }
+            };
 
-                string? input = Console.ReadLine();
-
-                switch (input)
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine("===== TODO LISTS =====");
+                foreach (var list in todoLists)
                 {
-                    case "1":
-                        Console.Clear();
-                        Console.Write("Enter task title: ");
-                string title = Console.ReadLine() ?? "";
+                    Console.WriteLine($"{list.Key}: {list.Value.TaskCount()} tasks");
+                }
+                Console.WriteLine("\nSelect a list to view or press Q to quit:");
+                string? selectedList = Console.ReadLine()?.Trim().ToLower();
+                if (selectedList == "q") break;
 
-                if (!string.IsNullOrWhiteSpace(title))
+                if (selectedList != null)
                 {
-                    Console.Write("Enter task difficulty (1-5): ");
-                    string? diffInput = Console.ReadLine();
-
-                    // Try parsing the input
-                    if (int.TryParse(diffInput, out int diff) && diff >= 1 && diff <= 5)
+                    selectedList = char.ToUpper(selectedList[0]) + selectedList.Substring(1);
+                    if (todoLists.TryGetValue(selectedList, out var selectedTodoList))
                     {
-                        todoList.AddTask(new Todo { Title = title, Diff = diff, Status = false });
-                        SaveListToFile(todoList);
-                        break; // Valid input, exit loop
+                        await MainLoop(selectedTodoList);
                     }
+                    else
+                    {
+                        Console.WriteLine("Invalid selection. Press Enter to try again...");
+                        Console.ReadLine();
+                    }
+                }
 
-                    Console.WriteLine("Invalid input. Please enter a number between 1 and 5.");
-                }
-                else
+            }
+
+            static async Task MainLoop(Lst list)
+            {
+                while (true)
                 {
-                    Console.WriteLine("Title cannot be empty. Please enter a valid title.");
-                }
-                break;
-                case "2":
                     Console.Clear();
-                    Console.WriteLine(todoList.ToString());
-                    Console.Write("Enter task number to remove: ");
-                    if (int.TryParse(Console.ReadLine(), out int taskNum))
+                    Console.WriteLine($"===== {list.ListName} TODO LIST =====");
+                    Console.WriteLine(list);
+                    Console.WriteLine("\n1. Add Task\n2. Remove Task\n3. Mark Task as Completed\n4. Edit Task\n5. Exit");
+                    Console.Write("Choose an option: ");
+
+                    switch (Console.ReadLine()?.Trim())
                     {
-                        todoList.RemoveTask(taskNum - 1);
-                        SaveListToFile(todoList);
+                        case "1":
+                            await list.AddTaskFromInput();
+                            break;
+                        case "2":
+                            await list.RemoveTaskFromInput();
+                            break;
+                        case "3":
+                            await list.MarkTaskAsCompleted();
+                            break;
+                        case "4":
+                            await list.EditTask();
+                            break;
+                        case "5":
+                            return;
+                        default:
+                            Console.WriteLine("Invalid choice. Press Enter to try again...");
+                            Console.ReadLine();
+                            break;
                     }
-                    break;
-                case "3":
-                    running = false;
-                    break;
-                default:
-                    Console.WriteLine("Invalid choice. Press Enter to try again...");
-                    Console.ReadLine();  // Waits for input before refreshing
-                    break;
                 }
             }
         }
 
-        static void ViewList(Lst todoList)
+        class Todo
         {
-            Console.Clear();
-            Console.WriteLine(todoList.ToString());
-            static void AddTask(Lst todoList)
+            public required string Title { get; set; }
+            public int Diff { get; set; }
+            public bool Status { get; set; }
+
+            public override string ToString()
             {
-                Console.Clear();
-                Console.Write("Enter task title: ");
-                string? title = Console.ReadLine();
-
-                if (string.IsNullOrWhiteSpace(title))
-                {
-                    Console.WriteLine("Task title cannot be empty. Press Enter to continue...");
-                    Console.ReadLine();
-                    return;
-                }
-
-                Console.Write("Enter difficulty (1-5): ");
-                if (!int.TryParse(Console.ReadLine(), out int diff) || diff < 1 || diff > 5)
-                {
-                    Console.WriteLine("Invalid difficulty. Press Enter to continue...");
-                    Console.ReadLine();
-                    return;
-                }
-
-                Todo newTask = new Todo { Title = title, Diff = diff, Status = false };
-                todoList.Tasks.Add(newTask);
-
-                Console.WriteLine("Task added! Press Enter to continue...");
-                Console.ReadLine();
-            }
-
-            static void RemoveTask(Lst todoList)
-            {
-                Console.Clear();
-                Console.WriteLine("Choose a task to remove:");
-                for (int i = 0; i < todoList.Tasks.Count; i++)
-                {
-                    Console.WriteLine($"{i + 1}. {todoList.Tasks[i]}");
-                }
-
-                Console.Write("Enter task number: ");
-                if (!int.TryParse(Console.ReadLine(), out int taskNum) || taskNum < 1 || taskNum > todoList.Tasks.Count)
-                {
-                    Console.WriteLine("Invalid task number. Press Enter to continue...");
-                    Console.ReadLine();
-                    return;
-                }
-
-                todoList.Tasks.RemoveAt(taskNum - 1);
-                Console.WriteLine("Task removed. Press Enter to continue...");
-                Console.ReadLine();
+                return $"[{(Status ? "✔" : "✘")}] {Title} (Difficulty: {Diff})";
             }
         }
 
-        public static Lst LoadListFromFile()
+        class Lst
         {
-            try
+            public string ListName { get; set; }
+            public List<Todo> Tasks { get; set; } = new();
+            private string filePath;
+            private JsonSerializerOptions jsonOptions = new() { WriteIndented = true };
+
+            public Lst(string path)
+            {
+                filePath = path;
+                ListName = Path.GetFileNameWithoutExtension(path);
+                LoadListFromFile();
+            }
+
+            public int TaskCount() => Tasks.Count;
+
+            public void LoadListFromFile()
             {
                 if (File.Exists(filePath))
                 {
                     string json = File.ReadAllText(filePath);
-                    return JsonSerializer.Deserialize<Lst>(json) ?? new Lst();
+                    Tasks = JsonSerializer.Deserialize<List<Todo>>(json) ?? new();
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading todo list: {ex.Message}");
-            }
-            return new Lst(); // Return empty list if there's an issue
-        }
 
-        public static void SaveListToFile(Lst todoList)
-        {
-            try
+            public async Task SaveListToFile()
             {
-                string json = JsonSerializer.Serialize(todoList, jsonOptions);
-                File.WriteAllText(filePath, json);
-                Console.WriteLine("Todo list saved successfully.");
+                string json = JsonSerializer.Serialize(Tasks, jsonOptions);
+                await File.WriteAllTextAsync(filePath, json);
             }
-            catch (Exception ex)
+
+            public async Task AddTaskFromInput()
             {
-                Console.WriteLine($"Error saving todo list: {ex.Message}");
+                Console.Write("Enter task title: ");
+                string title = Console.ReadLine()?.Trim() ?? "";
+                if (string.IsNullOrWhiteSpace(title)) return;
+
+                Console.Write("Enter task difficulty (1-5): ");
+                if (int.TryParse(Console.ReadLine(), out int diff) && diff >= 1 && diff <= 5)
+                {
+                    Tasks.Add(new Todo { Title = title, Diff = diff, Status = false });
+                    await SaveListToFile();
+                }
+            }
+
+            public async Task RemoveTaskFromInput()
+            {
+                Console.WriteLine("Choose a task to remove:");
+                DisplayTasks();
+                if (int.TryParse(Console.ReadLine(), out int taskNum) && taskNum > 0 && taskNum <= Tasks.Count)
+                {
+                    Tasks.RemoveAt(taskNum - 1);
+                    await SaveListToFile();
+                }
+            }
+
+            public async Task MarkTaskAsCompleted()
+            {
+                Console.WriteLine("Choose a task to mark as completed:");
+                DisplayTasks();
+                if (int.TryParse(Console.ReadLine(), out int taskNum) && taskNum > 0 && taskNum <= Tasks.Count)
+                {
+                    Tasks[taskNum - 1].Status = true;
+                    await SaveListToFile();
+                }
+            }
+
+            public async Task EditTask()
+            {
+                Console.WriteLine("Choose a task to edit:");
+                DisplayTasks();
+                if (int.TryParse(Console.ReadLine(), out int taskNum) && taskNum > 0 && taskNum <= Tasks.Count)
+                {
+                    Console.Write("Enter new task title: ");
+                    string newTitle = Console.ReadLine()?.Trim() ?? Tasks[taskNum - 1].Title;
+
+                    Console.Write("Enter new difficulty (1-5): ");
+                    if (int.TryParse(Console.ReadLine(), out int newDiff) && newDiff >= 1 && newDiff <= 5)
+                    {
+                        Tasks[taskNum - 1].Title = newTitle;
+                        Tasks[taskNum - 1].Diff = newDiff;
+                        await SaveListToFile();
+                    }
+                }
+            }
+
+            private void DisplayTasks()
+            {
+                for (int i = 0; i < Tasks.Count; i++)
+                {
+                    Console.WriteLine($"{i + 1}. {Tasks[i]}");
+                }
+            }
+
+            public override string ToString()
+            {
+                if (Tasks.Count == 0) return "No tasks available.";
+                var taskList = new StringBuilder();
+                for (int i = 0; i < Tasks.Count; i++)
+                {
+                    taskList.AppendLine($"{i + 1}. {Tasks[i]}");
+                }
+                return taskList.ToString();
             }
         }
     }

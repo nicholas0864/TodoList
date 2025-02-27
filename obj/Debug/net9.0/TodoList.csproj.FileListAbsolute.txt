@@ -12,3 +12,4 @@
 /Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.pdb
 /Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.genruntimeconfig.cache
 /Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/ref/TodoList.dll
+/Users/nicholasonigkeit/code/c#/TodoList/obj/Debug/net9.0/TodoList.sourcelink.json
